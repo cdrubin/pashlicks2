@@ -56,50 +56,61 @@ function pashlicks.render( code, context, name )
 end
 
 
+function pashlicks.error( code, err )
+
+  local filename, linenumber, description = err:match( '"(.+)".-:(%d+): (.+)$' )
+
+  -- break code into lines
+  local code_linearray = {}
+  local linecount = 1
+  for i in code:gmatch( '.-\n' ) do
+    table.insert( code_linearray, string.format( '%-5d', linecount )..i )
+    linecount = linecount + 1
+  end
+
+  -- consider only linenumber lines of code
+  local code_uptoerror = pashlicks.slice( code_linearray, 1, linenumber )
+  code_uptoerror = table.concat( code_uptoerror )
+  local _, count_newlinestart = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[\n', '' )
+  local _, count_singleline = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
+  local _, count_ = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
+
+  --print( code_uptoerror )
+  --print( count_newlinestart )
+  --print( count_singleline )
+
+  local error_line = linenumber - ( count_newlinestart * 2 )- count_singleline - 2;
+
+  if ( filename:sub( 1, 7 ) == 'local _' ) then
+    filename = pashlicks.processing .. ' > '..table.concat( context.render_parents, ' > ');
+  end
+
+  print( arg[0].. ':'..filename..':'..error_line..': '..description )
+  os.exit( 1 )
+
+end
+
+
 -- Helper function that uses load to check code and if okay return the environment it creates
 function pashlicks.run_code( code, context, name )
 
+  -- check syntax and return a function
   local func, err = load( code, name, 't', context )
 
   if err then
-    local filename, linenumber, description = err:match( '"(.+)".-:(%d+): (.+)$' )
-    --print( 'In here: '..filename )
-    --print( 'Line number: '..linenumber )
-    --print( 'Description: '..description )
-
-    -- break code into lines
-    local code_linearray = {}
-    local linecount = 1
-    for i in code:gmatch( '.-\n' ) do
-      table.insert( code_linearray, string.format( '%-5d', linecount )..i )
-      linecount = linecount + 1
-    end
-
-    -- consider only linenumber lines of code
-    local code_uptoerror = pashlicks.slice( code_linearray, 1, linenumber )
-    code_uptoerror = table.concat( code_uptoerror )
-    local _, count_newlinestart = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[\n', '' )
-    local _, count_singleline = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
-    local _, count_ = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
-
-    --print( code_uptoerror )
-    --print( count_newlinestart )
-    --print( count_singleline )
-
-    local error_line = linenumber - ( count_newlinestart * 2 )- count_singleline - 2;
-
-    if ( filename:sub( 1, 7 ) == 'local _' ) then
-      filename = pashlicks.processing .. ' > '..table.concat( context.render_parents, ' > ');
-    end
-
-    --assert( func, err )
-    print( arg[0].. ':'..filename..':'..error_line..': '..description )
-    os.exit( 1 )
-
+    pashlick.error( code, err )
   else
-    print( 'HERE!' )
-    return func(), context
+    -- execute with protection and catch errors
+    local result, returned = pcall( func )
+    if ( result == false ) then
+      pashlicks.error( code, returned )
+    else
+      return returned, context
+    end
+
+    --return func(), context
   end
+
 end
 
 
@@ -160,7 +171,6 @@ function pashlicks.render_tree( source, destination, level, context, silent )
   for count, directory in ipairs( directories ) do
 
     --print( '::::'..whitespace:rep( level * 2 )..directory..'/' )
-
     --print( pashlicks.inspect( context.page ) )
     --print( pashlicks.inspect( pashlicks.copy( context ) ) )
 
@@ -202,11 +212,6 @@ function pashlicks.render_tree( source, destination, level, context, silent )
       end
     end
     context.page.parts = rendered_page_parts
-
-    --if context.page.path == 'index.html' and not silent then
-      --print( pashlicks.inspect( context.page.parts ) )
-      --exit()
-    --end
 
     -- render and write out page
     local outfile
