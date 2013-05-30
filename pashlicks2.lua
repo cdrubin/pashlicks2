@@ -73,7 +73,6 @@ function pashlicks.error( code, err )
   code_uptoerror = table.concat( code_uptoerror )
   local _, count_newlinestart = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[\n', '' )
   local _, count_singleline = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
-  local _, count_ = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
 
   --print( code_uptoerror )
   --print( count_newlinestart )
