@@ -17,10 +17,7 @@ pashlicks.TEMPLATE_ACTIONS = {
     return ('_result[#_result+1] = %s'):format(code)
   end,
   ['[('] = function(code)
-    --table.insert( pashlicks.includes, code )
     return ( '_result[#_result+1] = pashlicks.render( pashlicks.read_file( %s ), _ENV )' ):format( code )
-    --table.remove( pashlicks.includes )
-    --return result --( '_result[#_result+1] = pashlicks.render( pashlicks.read_file( %s ), _ENV )' ):format( code )
   end
 }
 
@@ -37,13 +34,9 @@ function pashlicks.render( code, context, name )
     --print( 'block: '..pashlicks.inspect( block ) )
     --print( 'act: '..pashlicks.inspect( act ) )
 
-    --print( '___'..block:sub( 1, 3 )..'___' )
     if ( block:sub( 1, 2 ) == '[(' ) then
-      --print( 'Opening'..block )
       table.insert( context.render_parents, block:match( '"(.+)"' ) )
     end
-
-    --print()
 
     if act then
       code[#code+1] = '_result[#_result+1] = [=====[' .. text .. ']=====]'
@@ -95,7 +88,6 @@ function pashlicks.run_code( code, context, name )
 
     local error_line = linenumber - ( count_newlinestart * 2 )- count_singleline - 2;
 
-    --print( '+++'..filename:sub( 1, 7 )..'+++' )
     if ( filename:sub( 1, 7 ) == 'local _' ) then
       filename = pashlicks.processing .. ' > '..table.concat( context.render_parents, ' > ');
     end
