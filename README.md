@@ -42,7 +42,7 @@ also be done inside the page itself.
 page.layout = '_layouts/site.html'
 site.keywords = 'Dog-run'
 ```
-*avoid* doing something like the following :
+**avoid** doing something like the following :
 ```lua
 page = { layout = '_layouts/site.html' }
 ```
