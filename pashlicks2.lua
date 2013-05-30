@@ -4,7 +4,7 @@
 
 local lfs = require( 'lfs' )
 
-pashlicks = { context = {}, processing = '' }
+pashlicks = { context = { render_parents = {} }, processing = '' }
 setmetatable( pashlicks.context, { __index = _G } )
 
 pashlicks.inspect = require( '_lib/inspect' )
@@ -17,7 +17,10 @@ pashlicks.TEMPLATE_ACTIONS = {
     return ('_result[#_result+1] = %s'):format(code)
   end,
   ['[('] = function(code)
-    return ( '_result[#_result+1] = pashlicks.render( pashlicks.read_file( %s ), _ENV )'):format( code )
+    --table.insert( pashlicks.includes, code )
+    return ( '_result[#_result+1] = pashlicks.render( pashlicks.read_file( %s ), _ENV )' ):format( code )
+    --table.remove( pashlicks.includes )
+    --return result --( '_result[#_result+1] = pashlicks.render( pashlicks.read_file( %s ), _ENV )' ):format( code )
   end
 }
 
@@ -29,9 +32,17 @@ function pashlicks.render( code, context, name )
   for text, block in string.gmatch( tmpl, "([^%[]-)(%b[])" ) do
     local act = pashlicks.TEMPLATE_ACTIONS[block:sub( 1, 2 )]
 
+    --pashlicks.render_block = block
     --print( 'text: '..pashlicks.inspect( text ) )
     --print( 'block: '..pashlicks.inspect( block ) )
     --print( 'act: '..pashlicks.inspect( act ) )
+
+    --print( '___'..block:sub( 1, 3 )..'___' )
+    if ( block:sub( 1, 2 ) == '[(' ) then
+      --print( 'Opening'..block )
+      table.insert( context.render_parents, block:match( '"(.+)"' ) )
+    end
+
     --print()
 
     if act then
@@ -48,19 +59,53 @@ function pashlicks.render( code, context, name )
   code[#code+1] = 'return table.concat(_result)'
   code = table.concat( code, '\n' )
 
-  --print( code )
-
   return pashlicks.run_code( code, context, name )
 end
 
 
 -- Helper function that uses load to check code and if okay return the environment it creates
 function pashlicks.run_code( code, context, name )
+
   local func, err = load( code, name, 't', context )
 
   if err then
-    assert( func, err )
+    local filename, linenumber, description = err:match( '"(.+)".-:(%d+): (.+)$' )
+    --print( 'In here: '..filename )
+    --print( 'Line number: '..linenumber )
+    --print( 'Description: '..description )
+
+    -- break code into lines
+    local code_linearray = {}
+    local linecount = 1
+    for i in code:gmatch( '.-\n' ) do
+      table.insert( code_linearray, string.format( '%-5d', linecount )..i )
+      linecount = linecount + 1
+    end
+
+    -- consider only linenumber lines of code
+    local code_uptoerror = pashlicks.slice( code_linearray, 1, linenumber )
+    code_uptoerror = table.concat( code_uptoerror )
+    local _, count_newlinestart = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[\n', '' )
+    local _, count_singleline = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
+    local _, count_ = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
+
+    --print( code_uptoerror )
+    --print( count_newlinestart )
+    --print( count_singleline )
+
+    local error_line = linenumber - ( count_newlinestart * 2 )- count_singleline - 2;
+
+    --print( '+++'..filename:sub( 1, 7 )..'+++' )
+    if ( filename:sub( 1, 7 ) == 'local _' ) then
+      filename = pashlicks.processing .. ' > '..table.concat( context.render_parents, ' > ');
+    end
+
+    --assert( func, err )
+    print( arg[0].. ':'..filename..':'..error_line..': '..description )
+    os.exit( 1 )
+
   else
+    print( 'HERE!' )
     return func(), context
   end
 end
@@ -150,7 +195,7 @@ function pashlicks.render_tree( source, destination, level, context, silent )
     context.page.level = level
     context.page.directory = source:gsub( '^%.%/', '' )
     context.page.file = file
-    context.page.path = context.page.directory..'/'..context.page.file
+    context.page.path = ( context.page.directory..'/'..context.page.file ):gsub( '^%.%/', '' )
 
 
     -- check for (and render) page parts
@@ -166,7 +211,7 @@ function pashlicks.render_tree( source, destination, level, context, silent )
     end
     context.page.parts = rendered_page_parts
 
-    --if context.page.path == 'members/index.html' and not silent then
+    --if context.page.path == 'index.html' and not silent then
       --print( pashlicks.inspect( context.page.parts ) )
       --exit()
     --end
@@ -221,8 +266,8 @@ function pashlicks.slice( values, start_index, end_index )
   local result = {}
   local n = #values
 -- default values for range
-  start_index = start_index or 1
-  end_index = end_index or n
+  start_index = tonumber( start_index ) or 1
+  end_index = tonumber( end_index ) or n
   if end_index < 0 then
     end_index = n + end_index + 1
   elseif end_index > n then
