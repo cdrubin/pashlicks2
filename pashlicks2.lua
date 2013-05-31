@@ -7,7 +7,8 @@ local lfs = require( 'lfs' )
 pashlicks = { context = { render_parents = {} }, processing = '' }
 setmetatable( pashlicks.context, { __index = _G } )
 
-pashlicks.inspect = require( '_lib/inspect' )
+DEBUG = false
+if DEBUG then pashlicks.inspect = require( '_lib/inspect' ) end
 
 pashlicks.TEMPLATE_ACTIONS = {
   ['[%'] = function(code)
