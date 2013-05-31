@@ -9,21 +9,21 @@ Files and directories that begin with `_` or `.` are ignored.
 
 She understands three kinds of tags inside source files :
 
-1. Code     [%
+1. Code
 ``` lua
 [% for i = 1,5 do %]
   <br />
 [% end %]
 ```
 
-2. Value    [=
+2. Value
 ``` lua
 [% for i = 1,5 do %]
   <li>Item [= i =]</li>
 [% end %]
 ```
 
-3. Include  [(
+3. Include
 ``` lua
   [( "menu.html" )]
 ```
