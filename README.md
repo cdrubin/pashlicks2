@@ -1,6 +1,10 @@
 Pashlicks2
 =========
 
+Pashlicks2 is a text processor that allows lua to be executed in 
+the context of page generation. Developed as a static website 
+generator she claims to be simple to extend.
+
 Pashlicks2 expects to be at the foot (root) of your site. She adds
 the execution of `_dir.lua` to the environment of the contents of
 a directory.
