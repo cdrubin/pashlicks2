@@ -1,3 +1,4 @@
+-- add some convenience and website-related functions
 pashlicks.run_file( '_lib/extensions.lua', _ENV )
 
 page.layout = '_layouts/default.html'
