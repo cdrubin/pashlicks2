@@ -104,7 +104,7 @@ Pashlicks loves her sisters Josie and Marmite
 ```
 
 Pashlicks2 supports **page parts** which are identified by the name of the 
-page they are related to preceeded by double underscores followed by a dot and the
+page they are related to preceeded by double underscores, followed by a dot and the
 name of the part. These sections are rendered within the context of the 
 named page. For 'carousel' and 'featured' parts of the events page we would
 have :
