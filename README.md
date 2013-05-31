@@ -69,7 +69,7 @@ pashlicks.lua
 we could have :
 ```
 --- _dir.lua
-page = { layout = '_layouts/site.html' }
+page.layout = '_layouts/site.html'
 
 
 --- _layouts/site.html
@@ -123,4 +123,35 @@ Calling Pashlicks2 should be as simple as :
 
 ```bash
 lua pashlicks2.lua _output
+```
+
+Pashlicks2 supports **page parts** which are identified by the name of the 
+page they are related to preceeded by double underscores followed by a dot and the
+name of the part. These sections are rendered within the context of the 
+named page. For 'carousel' and 'featured' parts of the events page we would
+have :
+
+
+```
+--- __events.carousel.html
+<ul id="carousel">
+</ul>
+
+
+--- __events.featured.html
+<h2>Featured!</h2>
+
+
+--- events.html
+[%
+page.layout = '_layouts/site.html'
+page.title = 'Events'
+%]
+
+<div id="content">
+[= page.parts['carousel'] =]
+<hr />
+[= page.parts['featured'] =]
+</div>
+
 ```
