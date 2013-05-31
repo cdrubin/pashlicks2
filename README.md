@@ -103,28 +103,6 @@ Pashlicks loves her sisters Josie and Marmite
 
 ```
 
-An example of some customization is available in the included
-[_dir.lua](https://github.com/cdrubin/pashlicks2/blob/master/_dir.lua).
-When this file is placed at the root of the site Pashlicks makes sure that
-all pages have these values and functions available in their environment.
-
-Every page has some *special* variables injected into its environment:
-
-```lua
-page.file      -- filename of file being processed
-page.directory -- directory of the file being processed
-page.path      -- path to file from root of site
-page.level     -- level in the tree at which this page sits
-
-site.tree      -- tree of site
-```
-
-Calling Pashlicks2 should be as simple as :
-
-```bash
-lua pashlicks2.lua _output
-```
-
 Pashlicks2 supports **page parts** which are identified by the name of the 
 page they are related to preceeded by double underscores followed by a dot and the
 name of the part. These sections are rendered within the context of the 
@@ -149,9 +127,32 @@ page.title = 'Events'
 %]
 
 <div id="content">
-[= page.parts['carousel'] =]
+[= page.parts['carousel.html'] =]
 <hr />
-[= page.parts['featured'] =]
+[= page.parts['featured.html'] =]
 </div>
 
+```
+
+
+An example of some customization is available in the included
+[_dir.lua](https://github.com/cdrubin/pashlicks2/blob/master/_dir.lua).
+When this file is placed at the root of the site Pashlicks makes sure that
+all pages have these values and functions available in their environment.
+
+Every page has some *special* variables injected into its environment:
+
+```lua
+page.file      -- filename of file being processed
+page.directory -- directory of the file being processed
+page.path      -- path to file from root of site
+page.level     -- level in the tree at which this page sits
+
+site.tree      -- tree of site
+```
+
+Calling Pashlicks2 should be as simple as :
+
+```bash
+lua pashlicks2.lua _output
 ```
