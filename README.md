@@ -34,8 +34,8 @@ chew on HTML template files.
 A common need when using Pashlicks as a static site generator
 is the use of a _layout_ or _template_ inside which to embed the
 content of a page. Specifying a layout can be done in a `_dir.lua`
-file so that all pages in that directory and inner directories use
-a particular layout. Specifying the layout template can of course
+file so that all pages in that directory and any of its child directories 
+use a particular layout. Specifying the layout template can of course
 also be done inside the page itself.
 
 ```lua
