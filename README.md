@@ -1,5 +1,5 @@
 Pashlicks2
-==========
+=======
 
 Pashlicks2 is a text processor that allows lua to be executed in 
 the context of page generation. Developed as a static website 
