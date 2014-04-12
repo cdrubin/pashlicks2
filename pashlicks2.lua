@@ -10,6 +10,9 @@ setmetatable( pashlicks.context, { __index = _G } )
 DEBUG = false
 if DEBUG then pashlicks.inspect = require( '_lib/inspect' ) end
 
+-- default to loading extensions
+require( '_transform/_lib/extensions' )
+
 pashlicks.TEMPLATE_ACTIONS = {
   ['[%'] = function(code)
     return code
@@ -59,6 +62,7 @@ end
 
 function pashlicks.error( code, err )
 
+  print( err )
   local filename, linenumber, description = err:match( '"(.+)".-:(%d+): (.+)$' )
 
   -- break code into lines
@@ -75,9 +79,9 @@ function pashlicks.error( code, err )
   local _, count_newlinestart = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[\n', '' )
   local _, count_singleline = string.gsub( code_uptoerror, '_result%[#_result%+1%] = %[=====%[]=====]\n', '' )
 
-  --print( code_uptoerror )
-  --print( count_newlinestart )
-  --print( count_singleline )
+  print( code_uptoerror )
+  print( count_newlinestart )
+  print( count_singleline )
 
   local error_line = linenumber - ( count_newlinestart * 2 )- count_singleline - 2;
 
@@ -282,10 +286,10 @@ function pashlicks.slice( values, start_index, end_index )
 end
 
 
-pashlicks.destination = arg[1] or nil
+pashlicks.destination = arg[2] or nil
 
-if ( #arg ~= 1 ) then
-  print( 'Usage: lua '..arg[0]..' <destination>' )
+if ( #arg ~= 2 ) then
+  print( 'Usage: lua '..arg[0]..' <source> <destination>' )
 else
   local destination_attr = lfs.attributes( pashlicks.destination )
   if type( destination_attr ) ~= 'table' or destination_attr.mode ~= 'directory' then
@@ -301,7 +305,7 @@ else
     pashlicks.context.site = { tree = site_tree }
     pashlicks.context.page = {}
 
-    pashlicks.render_tree( '.', pashlicks.destination, 0, pashlicks.context )
+    pashlicks.render_tree( arg[1], pashlicks.destination, 0, pashlicks.context )
   end
 end
 
