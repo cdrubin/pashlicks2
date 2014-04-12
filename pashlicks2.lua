@@ -7,11 +7,34 @@ local lfs = require( 'lfs' )
 pashlicks = { context = { render_parents = {} }, processing = '' }
 setmetatable( pashlicks.context, { __index = _G } )
 
-DEBUG = false
-if DEBUG then pashlicks.inspect = require( '_lib/inspect' ) end
+DEBUG = true
+if DEBUG then pashlicks.inspect = require( '_pashlicks2/_lib/inspect' ) end
+
+require( '_pashlicks2/_lib/extensions' )
+
+local scriptfolder, scriptfilename
+
+local parts = arg[0]:split( '/' )
+scriptfilename = parts[#parts]
+parts[#parts] = nil
+if #parts > 0 then
+  scriptfolder = table.concat( parts, '/' )
+else
+  scriptfolder = '.'
+end
+
+--print( scriptfolder )
+--print( scriptfilename )
+--os.exit()
+
+--print( pashlicks.inspect( lfs.attributes( arg[0] ) ) )
+--print( lfs.dir( arg[0] ) )
+
+--print( arg[0] )
+--os.exit()
 
 -- default to loading extensions
-require( '_transform/_lib/extensions' )
+--require( /_lib/extensions' )
 
 pashlicks.TEMPLATE_ACTIONS = {
   ['[%'] = function(code)
@@ -118,6 +141,7 @@ function pashlicks.run_code( code, context, name )
 end
 
 
+
 function pashlicks.read_file( name )
   local infile = assert( io.open( name, 'r' ) )
   local content = infile:read( '*a' )
@@ -139,6 +163,7 @@ end
 
 function pashlicks.render_file( name, context )
   --return pashlicks.run_code( pashlicks.read_file( name ), context, name )
+  --print( pashlicks.source..'/'..name )
   return pashlicks.render( pashlicks.read_file( name ), pashlicks.copy( context ), name )
 end
 
@@ -154,8 +179,9 @@ function pashlicks.render_tree( source, destination, level, context, silent )
   -- check for 'subdir/_dir.lua' and add to context if it exists
   file = io.open( source..'/_dir.lua', 'r' )
   --if file then _, context = pashlicks.run_code( pashlicks.read_file( source..'/_dir.lua' ), context ) end
-  if file then _, context = pashlicks.run_file( source..'/_dir.lua', context ) end
+  if file then _, context = pashlicks.run_file( source..'/_dir.lua', context ); file.close(); if not silent then print( 'found _dir.lua at '..source ) end end
 
+  
   -- create tables of the file and directory names
   for item in lfs.dir( source ) do
     local attr = lfs.attributes( source..'/'..item )
@@ -286,15 +312,29 @@ function pashlicks.slice( values, start_index, end_index )
 end
 
 
+pashlicks.source = arg[1] or nil
 pashlicks.destination = arg[2] or nil
 
 if ( #arg ~= 2 ) then
   print( 'Usage: lua '..arg[0]..' <source> <destination>' )
 else
+  local source_attr = lfs.attributes( pashlicks.source )
   local destination_attr = lfs.attributes( pashlicks.destination )
-  if type( destination_attr ) ~= 'table' or destination_attr.mode ~= 'directory' then
+  if type( source_attr ) ~= 'table' or source_attr.mode ~= 'directory' then
+    print( '<source> needs to be an existing directory' )  
+  elseif type( destination_attr ) ~= 'table' or destination_attr.mode ~= 'directory' then
     print( '<destination> needs to be an existing directory' )
   else
+    
+    local here = lfs.currentdir()
+    pashlicks.source = here..'/'..pashlicks.source
+    pashlicks.destination = here..'/'..pashlicks.destination
+    
+    print( pashlicks.source.. ' --> ' )
+    print( pashlicks.destination )
+    
+    lfs.chdir( arg[1] )
+  
     -- stand-in for the tree for the first pass of render (as the tree is generated in this initial pass)
     pashlicks.context.site = { tree = {} }
     pashlicks.context.page = {}
@@ -304,8 +344,8 @@ else
 
     pashlicks.context.site = { tree = site_tree }
     pashlicks.context.page = {}
-
-    pashlicks.render_tree( arg[1], pashlicks.destination, 0, pashlicks.context )
+    
+    pashlicks.render_tree( '.', pashlicks.destination, 0, pashlicks.context )
   end
 end
 
