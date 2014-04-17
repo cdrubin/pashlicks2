@@ -3,25 +3,26 @@
 --   templating features thanks to Zed Shaw's tir
 
 local lfs = require( 'lfs' )
+local templet = require( 'templet' )
 
 pashlicks = { context = { render_parents = {} }, processing = '' }
 setmetatable( pashlicks.context, { __index = _G } )
 
 DEBUG = true
-if DEBUG then pashlicks.inspect = require( '_pashlicks2/_lib/inspect' ) end
+if DEBUG then pashlicks.inspect = require( 'inspect' ) end
 
-require( '_pashlicks2/_lib/extensions' )
+--quire( '_pashlicks2/_lib/extensions' )
 
-local scriptfolder, scriptfilename
+--local scriptfolder, scriptfilename
 
-local parts = arg[0]:split( '/' )
-scriptfilename = parts[#parts]
-parts[#parts] = nil
-if #parts > 0 then
-  scriptfolder = table.concat( parts, '/' )
-else
-  scriptfolder = '.'
-end
+--local parts = arg[0]:split( '/' )
+--scriptfilename = parts[#parts]
+--parts[#parts] = nil
+--if #parts > 0 then
+--  scriptfolder = table.concat( parts, '/' )
+--else
+--  scriptfolder = '.'
+--end
 
 --print( scriptfolder )
 --print( scriptfilename )
@@ -125,7 +126,7 @@ function pashlicks.run_code( code, context, name )
   local func, err = load( code, name, 't', context )
 
   if err then
-    pashlick.error( code, err )
+    pashlicks.error( code, err )
   else
     -- execute with protection and catch errors
     local result, returned = pcall( func )
@@ -229,34 +230,51 @@ function pashlicks.render_tree( source, destination, level, context, silent )
     context.page.file = file
     context.page.path = ( context.page.directory..'/'..context.page.file ):gsub( '^%.%/', '' )
 
-
-    -- check for (and render) page parts
-    local rendered_page_parts = {}
-    local page_part_identifier = '__'..file:match( '[%a%d%-_]+'..'.' )
-    for page_part in lfs.dir( source ) do
-      if page_part:find( page_part_identifier ) == 1 then
-        local page_part_name = page_part:sub( page_part_identifier:len() + 1 )
-        if not silent then print( whitespace:rep( level * 2 )..'-'..page_part_name ) end
-        --local rendered_page_parts = {}
-        rendered_page_parts[page_part_name] = pashlicks.render_file( source..'/'..page_part, pashlicks.copy( context ) )
-      end
-    end
-    context.page.parts = rendered_page_parts
-
-    -- render and write out page
     local outfile
     if not silent then outfile = io.open( destination..'/'..file, "w" ) end
-    local output, after_context = pashlicks.render_file( source..'/'..file, pashlicks.copy( context ) )
 
-    -- embed in a layout if one was specified
-    if after_context.page.layout then
-      after_context.page.content = output
-      output = pashlicks.render_file( after_context.page.layout, after_context )
-      if not silent then print( whitespace:rep( level * 2 )..file..' ('..after_context.page.layout..')' ) end
+    local output, after_context
+    
+    if file:match( '%.jpg$' ) 
+      or file:match( '%.jpeg$' ) 
+      or file:match( '%.gif$' ) 
+      or file:match( '%.png$' ) 
+      or file:match( '%.eot$' ) 
+      or file:match( '%.ttf$' )
+      or file:match( '%.woff$' ) 
+      or destination:match( 'js' ) then
+      output = pashlicks.read_file( source..'/'..file )
+      after_context = context
     else
-      if not silent then print( whitespace:rep( level * 2 )..file ) end
-    end
+      -- TODO: CSS ;ayout handling!
+    
+      -- check for (and render) page parts
+      local rendered_page_parts = {}
+      local page_part_identifier = '__'..file:match( '[%a%d%-_]+'..'.' )
+      for page_part in lfs.dir( source ) do
+        if page_part:find( page_part_identifier ) == 1 then
+          local page_part_name = page_part:sub( page_part_identifier:len() + 1 )
+          if not silent then print( whitespace:rep( level * 2 )..'-'..page_part_name ) end
+          --local rendered_page_parts = {}
+          rendered_page_parts[page_part_name] = pashlicks.render_file( source..'/'..page_part, pashlicks.copy( context ) )
+        end
+      end
+      context.page.parts = rendered_page_parts
 
+      -- render and write out page
+      output, after_context = pashlicks.render_file( source..'/'..file, pashlicks.copy( context ) )
+
+      -- embed in a layout if one was specified
+      if after_context.page.layout then
+        after_context.page.content = output
+        output = pashlicks.render_file( after_context.page.layout, after_context )
+        if not silent then print( whitespace:rep( level * 2 )..file..' ('..after_context.page.layout..')' ) end
+      else
+        if not silent then print( whitespace:rep( level * 2 )..file ) end
+      end
+    
+    end
+    
     if not after_context.page.ignore then
       table.insert( tree, { directory = context.page.directory, file = context.page.file, path = context.page.path, title = after_context.page.title, layout = after_context.page.layout, hidden = after_context.page.hidden } )
     end
